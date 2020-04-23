@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import axios from "axios"
 import classnames from "classnames";
 import Loading from "./Loading"
+import { setInterview } from "helpers/reducers";
 import Panel from "./Panel"
 import {
   getTotalInterviews,
@@ -43,11 +44,11 @@ class Dashboard extends Component {
   };
 
   componentDidMount() {
-    const focused = JSON.parse(localStorage.getItem("focused"));
+    const focused = JSON.parse(localStorage.getItem('focused'));
     Promise.all([
-      axios.get("/api/days"),
-      axios.get("/api/appointments"),
-      axios.get("/api/interviewers")
+      axios.get('/api/days'),
+      axios.get('/api/appointments'),
+      axios.get('/api/interviewers')
     ]).then(([days, appointments, interviewers]) => {
       this.setState({
         loading: false,
@@ -57,7 +58,15 @@ class Dashboard extends Component {
       });
     });
     this.socket = new WebSocket(process.env.REACT_APP_WEBSOCKET_URL);
+    this.socket.onmessage = event => {
+      const data = JSON.parse(event.data);
 
+      if (typeof data === 'object' && data.type === 'SET_INTERVIEW') {
+        this.setState(previousState =>
+          setInterview(previousState, data.id, data.interview)
+        );
+      }
+    };
     if (focused) {
       this.setState({ focused });
     }
